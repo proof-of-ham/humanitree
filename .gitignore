@@ -45,3 +45,15 @@ dev-debug.log
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Logs
+logs
+*.log
+# Dependency directories
+node_modules/
+# Environment variables
+.env
+
+# Task files
+# tasks.json
+# tasks/ 
