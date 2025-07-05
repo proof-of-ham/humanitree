@@ -48,7 +48,9 @@ npm run dev
 ### 1. World ID Setup
 - Register app at [World ID Developer Portal](https://developer.worldcoin.org)
 - Create action: "plant-tree"
-- Copy `app_id` and `action_id` to `.env.local`
+- Update `.env` or `.env.local` with the following variables:
+  - `WLD_APP_ID=your_actual_app_id_here`
+  - `WLD_ACTION=plant-tree`
 
 ### 2. 1inch API
 - Get API key from [1inch Developer Portal](https://portal.1inch.io)
