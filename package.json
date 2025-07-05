@@ -39,6 +39,8 @@
     "@radix-ui/react-tooltip": "1.1.6",
     "@worldcoin/idkit": "latest",
     "@worldcoin/idkit-core": "latest",
+    "@worldcoin/mini-apps-ui-kit-react": "^1.2.4",
+    "@worldcoin/minikit-js": "^1.9.6",
     "autoprefixer": "^10.4.20",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

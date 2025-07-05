@@ -1,104 +1,149 @@
-# 🌳 Humanitree
+# 🌱 TreePlanter Social App
 
-**World ID verified tree planting mini app**
+A mobile-optimized social app for World that verifies humanity with World ID, plants real trees through NGO partnerships, and celebrates environmental impact.
 
-Plant real trees with one click using World ID proof-of-humanity and 1inch token swaps.
+## ✨ Features
 
-## 🎯 Concept
+- 🔐 **World ID Verification** - Prove you're a unique human
+- 🌳 **Real Tree Planting** - Partner with verified NGOs to plant actual trees
+- 🎉 **Impact Celebration** - Beautiful animations and achievements
+- 📱 **Mobile-First Design** - Optimized for mobile devices
+- 🤝 **Social Features** - Community feed and sharing
+- 📊 **Impact Tracking** - Track your environmental contribution
+- 🌍 **Global Reach** - Plant trees worldwide through various NGOs
 
-Only verified humans can plant trees, preventing sybil attacks on environmental donations while making it dead simple (one click).
+## 🚀 Quick Start
 
-## 🛠️ Tech Stack
-
-- **Identity**: World ID (proof-of-humanity)
-- **UI**: Next.js 13.4.4 + Tailwind CSS
-- **Token Swap**: 1inch API (WLD → USDC)
-- **Blockchain**: World Chain Sepolia
-- **Smart Contracts**: Solidity + Hardhat
-
-## 🚀 Getting Started
-
-### Prerequisites
-
-- Node.js 18+
-- World App (for testing)
-- World ID verification
-
-### Installation
-
-1. **Clone and install dependencies:**
-```bash
-cd humanitree
+### 1. Install Dependencies
+\`\`\`bash
 npm install
-```
+\`\`\`
 
-2. **Set up environment variables:**
-```bash
-cp env.template .env.local
-# Edit .env.local with your actual values
-```
+### 2. Configure World ID
+1. Go to [World Developer Portal](https://developer.worldcoin.org)
+2. Create a new app
+3. Copy your App ID
+4. Create `.env.local`:
 
-3. **Run development server:**
-```bash
+\`\`\`env
+WLD_APP_ID=your_actual_app_id_here
+WLD_ACTION=plant-tree
+\`\`\`
+
+### 3. Update App ID in Code
+Replace the placeholder in `app/page.tsx`:
+\`\`\`tsx
+app_id="your_actual_app_id_here"
+\`\`\`
+
+### 4. Run Development Server
+\`\`\`bash
 npm run dev
-```
+\`\`\`
 
-## 🔧 Configuration Required
+### 5. Deploy & Configure
+1. Deploy to Vercel/Netlify
+2. Add your deployment URL to World Developer Portal
+3. Configure NGO API keys (optional for demo)
 
-### 1. World ID Setup
-- Register app at [World ID Developer Portal](https://developer.worldcoin.org)
-- Create action: "plant-tree"
-- Copy `app_id` and `action_id` to `.env.local`
+## 🌍 NGO Integration
 
-### 2. 1inch API
-- Get API key from [1inch Developer Portal](https://portal.1inch.io)
-- Add to `.env.local`
+The app integrates with multiple tree-planting NGOs:
 
-### 3. Smart Contract Deployment
-- Deploy to World Chain Sepolia
-- Update contract address in `.env.local`
+- **One Tree Planted** - Global reforestation
+- **Trees for the Future** - Sustainable farming
+- **Eden Reforestation** - Ecosystem restoration
 
-## 📱 World App Integration
+### Adding Real NGO APIs
 
-This mini app is designed to run inside the World App:
+Replace the mock API calls in `app/actions/plant-tree.ts` with real NGO endpoints:
 
-1. **World ID Verification**: Automatic detection
-2. **One-Click Tree Planting**: WLD → USDC → Donation
-3. **Impact Tracking**: See total trees planted
+\`\`\`typescript
+const response = await fetch(ngoEndpoint, {
+  method: 'POST',
+  headers: {
+    'Authorization': \`Bearer \${process.env.NGO_API_KEY}\`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    user_id: userNullifier,
+    location: selectedLocation,
+    species: selectedSpecies
+  })
+})
+\`\`\`
 
-## 🧪 Testing
+## 📱 Mobile Features
 
-Use the Worldcoin Simulator for local development:
-- Generate test World ID proofs
-- Test nullifier hash uniqueness
-- Verify sybil resistance
+- **Touch-Optimized UI** - Large buttons and touch targets
+- **Responsive Design** - Works on all screen sizes
+- **Native Sharing** - Uses Web Share API when available
+- **Offline Support** - Local storage for user data
+- **Progressive Web App** - Can be installed on mobile devices
 
-## 🏗️ Development Tasks
+## 🎨 Design System
 
-Track progress with Taskmaster:
-```bash
-# View current tasks
-task-master list
+- **Green Theme** - Reflects environmental focus
+- **Smooth Animations** - Engaging user experience
+- **Accessibility** - WCAG compliant design
+- **Modern UI** - Clean, minimalist interface
 
-# Show next task
-task-master next
+## 🔒 Privacy & Security
 
-# Update progress
-task-master update-subtask --id=1.1 --prompt="Setup complete"
-```
+- **Zero-Knowledge Proofs** - World ID protects user privacy
+- **No Personal Data** - Only nullifier hash is stored
+- **Secure API Calls** - All NGO communications are encrypted
+- **Local Storage** - User preferences stored locally
 
-## 🌍 Deployment
+## 🌟 Social Features
 
-Deploy to Vercel for World App integration:
-```bash
-npm run build
-# Deploy to Vercel or similar platform
-```
+- **Community Feed** - See other users' tree planting activities
+- **Achievement Sharing** - Share your environmental impact
+- **Leaderboards** - Gamified tree planting experience
+- **Impact Visualization** - Beautiful charts and stats
+
+## 📊 Environmental Impact
+
+Each tree planted contributes to:
+- **CO₂ Absorption** - ~22kg CO₂ per year per tree
+- **Biodiversity** - Habitat for wildlife
+- **Soil Health** - Prevents erosion
+- **Local Communities** - Economic opportunities
+
+## 🛠️ Technical Stack
+
+- **Next.js 14** - React framework with App Router
+- **TypeScript** - Type-safe development
+- **Tailwind CSS** - Utility-first styling
+- **World ID SDK** - Human verification
+- **Lucide Icons** - Beautiful iconography
+- **shadcn/ui** - Modern UI components
+
+## 🚀 Deployment
+
+### Vercel (Recommended)
+1. Connect your GitHub repository
+2. Add environment variables
+3. Deploy automatically
+
+### Other Platforms
+- Netlify
+- Railway
+- Render
+- Any Node.js hosting
 
 ## 🤝 Contributing
 
-Built for ETHcc Hackathon - World ID + 1inch integration showcase.
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
 
 ## 📄 License
 
-MIT
+MIT License - feel free to use this code for your own projects!
+
+## 🌱 Make a Difference
+
+Every tree planted through this app contributes to fighting climate change and supporting local communities worldwide. Join the movement! 🌍

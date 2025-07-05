@@ -1,7 +1,7 @@
 "use client"
 
-import { IDKitWidget, VerificationLevel, type ISuccessResult } from "@worldcoin/idkit"
-import { verify } from "./actions/verify"
+import { MiniKit, VerifyCommandInput, VerificationLevel, ISuccessResult } from "@worldcoin/minikit-js"
+import { IDKitWidget, VerificationLevel as IDKitVerificationLevel, type ISuccessResult as IDKitSuccessResult } from "@worldcoin/idkit"
 import { plantTree } from "./actions/plant-tree"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
@@ -19,6 +19,10 @@ export default function TreePlanterApp() {
   const [showCelebration, setShowCelebration] = useState(false)
   const [userNullifier, setUserNullifier] = useState<string>("")
   const [lastPlantedTree, setLastPlantedTree] = useState<any>(null)
+  const [isVerifying, setIsVerifying] = useState(false)
+  const [isInWorldApp, setIsInWorldApp] = useState(false)
+  const [showIDKitWidget, setShowIDKitWidget] = useState(false)
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false)
 
   // Load user data from localStorage on mount
   useEffect(() => {
@@ -29,13 +33,40 @@ export default function TreePlanterApp() {
       setTreesPlanted(userData.treesPlanted || 0)
       setUserNullifier(userData.nullifier || "")
     }
+
+    // Check if we're in World App environment
+    const checkWorldAppEnvironment = () => {
+      // Check for World App Mini App specific indicators
+      const isInWorldApp = MiniKit.isInstalled() || 
+                          window.location.href.includes('worldapp') ||
+                          window.location.href.includes('world.co') ||
+                          navigator.userAgent.includes('WorldApp') ||
+                          window.location.href.includes('miniapp') ||
+                          document.referrer.includes('worldapp') ||
+                          window.parent !== window // Check if we're in an iframe (common for Mini Apps)
+      
+      setIsInWorldApp(isInWorldApp)
+      
+      // Log environment details for debugging
+      console.log("Environment check:", {
+        url: window.location.href,
+        userAgent: navigator.userAgent,
+        referrer: document.referrer,
+        isInIframe: window.parent !== window,
+        miniKitInstalled: MiniKit.isInstalled(),
+        isInWorldApp: isInWorldApp
+      })
+    }
+
+    checkWorldAppEnvironment()
   }, [])
 
   const saveUserData = (data: any) => {
     localStorage.setItem("treePlanter_userData", JSON.stringify(data))
   }
 
-  const onSuccess = (result: ISuccessResult) => {
+  // IDKit verification (fallback for external browser)
+  const onIDKitSuccess = (result: IDKitSuccessResult) => {
     setIsVerified(true)
     setUserNullifier(result.nullifier_hash)
     const userData = {
@@ -44,15 +75,105 @@ export default function TreePlanterApp() {
       treesPlanted: treesPlanted,
     }
     saveUserData(userData)
+    setShowIDKitWidget(false)
+    
+    // Show success message
+    setShowSuccessMessage(true)
+    setTimeout(() => {
+      setShowSuccessMessage(false)
+    }, 3000)
   }
 
-  const handleProof = async (result: ISuccessResult) => {
+  const handleIDKitProof = async (result: IDKitSuccessResult) => {
     console.log("Proof received from IDKit:\n", JSON.stringify(result))
-    const data = await verify(result)
-    if (data.success) {
-      console.log("Successful response from backend:\n", JSON.stringify(data))
+    
+    // Send proof to backend for verification
+    const verifyResponse = await fetch("/api/verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        payload: result,
+        action: "plant-tree",
+        signal: undefined,
+      }),
+    })
+    
+    const verifyResponseJson = await verifyResponse.json()
+    if (verifyResponseJson.status === 200) {
+      console.log("Successful response from backend:\n", JSON.stringify(verifyResponseJson))
     } else {
-      throw new Error(`Verification failed: ${data.detail}`)
+      throw new Error(`Verification failed: ${verifyResponseJson.verifyRes?.detail || 'Unknown error'}`)
+    }
+  }
+
+  // MiniKit verification for Mini App inside World App
+  const handleVerify = async () => {
+    setIsVerifying(true)
+
+    try {
+      // Try MiniKit first (for World App environment)
+      if (MiniKit.isInstalled()) {
+        console.log("Using MiniKit for verification inside World App...")
+        
+        const verifyPayload: VerifyCommandInput = {
+          action: "plant-tree", // This should match your action ID from the Developer Portal
+          verification_level: VerificationLevel.Orb,
+        }
+
+        const { finalPayload } = await MiniKit.commandsAsync.verify(verifyPayload)
+        
+        if (finalPayload.status === "error") {
+          console.log("Error payload", finalPayload)
+          alert("Verification failed. Please try again.")
+          setIsVerifying(false)
+          return
+        }
+
+        console.log("Verification successful, sending to backend...")
+        // Send proof to backend for verification
+        const verifyResponse = await fetch("/api/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            payload: finalPayload as ISuccessResult,
+            action: "plant-tree",
+            signal: undefined,
+          }),
+        })
+        
+        const verifyResponseJson = await verifyResponse.json()
+        if (verifyResponseJson.status === 200) {
+          // Success! Update state and show success message
+          setIsVerified(true)
+          setUserNullifier(finalPayload.nullifier_hash)
+          const userData = {
+            isVerified: true,
+            nullifier: finalPayload.nullifier_hash,
+            treesPlanted: treesPlanted,
+          }
+          saveUserData(userData)
+          
+          // Show success message
+          setShowSuccessMessage(true)
+          setTimeout(() => {
+            setShowSuccessMessage(false)
+          }, 3000)
+          
+          console.log("Verification success! User can now plant trees.")
+        } else {
+          alert("Verification failed on backend. Please try again.")
+        }
+      } else {
+        // Fallback: Open IDKitWidget for external browser
+        console.log("MiniKit not available, opening IDKitWidget...")
+        setShowIDKitWidget(true)
+      }
+    } catch (error) {
+      console.error("Verification error:", error)
+      // Fallback to IDKitWidget
+      setShowIDKitWidget(true)
+    } finally {
+      setIsVerifying(false)
     }
   }
 
@@ -117,6 +238,25 @@ export default function TreePlanterApp() {
         />
       )}
 
+      {/* Success Message Overlay */}
+      {showSuccessMessage && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 mx-4 text-center max-w-sm">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="w-8 h-8 text-green-600" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Verification Successful!</h3>
+            <p className="text-gray-600 mb-4">You can now plant trees and help fight climate change.</p>
+            <Button 
+              onClick={() => setShowSuccessMessage(false)}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              Continue
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-green-200 z-10">
         <div className="max-w-md mx-auto px-4 py-3">
@@ -148,13 +288,13 @@ export default function TreePlanterApp() {
               <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto">
                 <Globe className="w-10 h-10 text-green-600" />
               </div>
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome to TreePlanter</h2>
-                <p className="text-gray-600 text-sm leading-relaxed">
-                  Verify your humanity with World ID and start planting trees to fight climate change. Every verified
-                  human can plant one tree per day! 🌱
-                </p>
-              </div>
+                              <div>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome to HumaniTree</h2>
+                  <p className="text-gray-600 text-sm leading-relaxed">
+                    Verify your humanity with World ID and start planting trees to fight climate change. Every verified
+                    human can plant one tree per day! 🌱
+                  </p>
+                </div>
             </div>
 
             <Card className="border-2 border-green-200 bg-white/50">
@@ -167,25 +307,51 @@ export default function TreePlanterApp() {
                   Prove you're a unique human to start planting trees
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <IDKitWidget
-                  app_id="app_staging_123456789abcdef"
-                  action="plant-tree"
-                  onSuccess={onSuccess}
-                  handleVerify={handleProof}
-                  verification_level={VerificationLevel.Orb}
+                                        <CardContent>
+                <Button 
+                  onClick={handleVerify}
+                  disabled={isVerifying}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white py-3 text-base font-medium"
+                  size="lg"
                 >
-                  {({ open }) => (
-                    <Button
-                      onClick={open}
-                      className="w-full bg-green-600 hover:bg-green-700 text-white py-3 text-base font-medium"
-                      size="lg"
-                    >
+                  {isVerifying ? (
+                    <>
+                      <Leaf className="w-5 h-5 mr-2 animate-spin" />
+                      Verifying...
+                    </>
+                  ) : (
+                    <>
                       <CheckCircle className="w-5 h-5 mr-2" />
-                      Verify & Start Planting
-                    </Button>
+                      Verify & Plant a Tree
+                    </>
                   )}
-                </IDKitWidget>
+                </Button>
+                
+                {/* IDKitWidget fallback for external browser */}
+                {showIDKitWidget && (
+                  <IDKitWidget
+                    app_id={(process.env.NEXT_PUBLIC_APP_ID || "app_staging_123456789abcdef") as `app_${string}`}
+                    action="plant-tree"
+                    onSuccess={onIDKitSuccess}
+                    handleVerify={handleIDKitProof}
+                    verification_level={IDKitVerificationLevel.Orb}
+                    autoClose={true}
+                    bridge_url="https://bridge.worldcoin.org"
+                  >
+                    {({ open }) => (
+                      <div className="mt-4">
+                        <Button 
+                          onClick={open}
+                          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 text-base font-medium"
+                          size="lg"
+                        >
+                          <CheckCircle className="w-5 h-5 mr-2" />
+                          Verify with World ID (External)
+                        </Button>
+                      </div>
+                    )}
+                  </IDKitWidget>
+                )}
               </CardContent>
             </Card>
 
