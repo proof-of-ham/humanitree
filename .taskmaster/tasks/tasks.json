@@ -1,0 +1,333 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Setup Project Repository and Development Environment",
+        "description": "Initialize the Node.js project, set up version control, and configure the development environment with required dependencies and environment variables.",
+        "details": "Create a new Node.js project using Node.js v18+ (LTS recommended). Initialize a Git repository. Set up package.json with dependencies: express@4.18.2, ethers@6.12.1, dotenv@16.3.1, cors@2.8.5, and jest@29.7.0 for testing. Create .env.example with USER_WALLET_PK, USDC_CONTRACT, RECIPIENT_WALLET, RPC_URL. Provide clear installation and setup instructions in README.md.",
+        "testStrategy": "Verify project setup by running npm install and checking for correct environment variable configuration. Test basic server startup.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 2,
+        "title": "Implement Core USDC Transfer Module",
+        "description": "Develop the core donateUSDC.js module to handle USDC token transfers using ethers.js.",
+        "details": "Create donateUSDC.js module. Use ethers.js to connect to the blockchain via RPC_URL. Load signer from USER_WALLET_PK. Implement transfer function using USDC contract ABI and address. Support both Ethereum and Polygon by allowing RPC_URL configuration. Include gas estimation and fee optimization. Validate wallet balance before transfer. Handle errors and return transaction hash and status.",
+        "testStrategy": "Unit test with mocked wallet and contract. Test with both mainnet and testnet configurations. Validate error handling and balance checks.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create donateUSDC.js Module",
+            "description": "Develop a dedicated JavaScript module named donateUSDC.js to encapsulate all logic related to USDC donations.",
+            "dependencies": [],
+            "details": "This module will serve as the main entry point for USDC donation functionality, exposing functions for initiating and managing USDC transfers.\n<info added on 2025-07-05T00:12:07.499Z>\n# Module Implementation Complete\n\nThe donateUSDC.js module has been successfully created with comprehensive functionality:\n\n## Module Features Implemented:\n- **DonationHandler Class**: Complete class-based implementation with initialization, validation, and error handling\n- **Multi-Network Support**: Pre-configured for Ethereum, Polygon, and Sepolia networks\n- **Balance Checking**: Both USDC token balance and ETH balance for gas fees\n- **Gas Estimation**: Comprehensive gas estimation with fee optimization\n- **Transaction Execution**: Complete donation flow with confirmation waiting\n- **Error Handling**: Robust error handling with specific error codes\n- **Utility Functions**: Helper functions for easy integration (createDonationHandler, quickDonate)\n\n## Key Implementation Details:\n- Uses ethers.js v6 for blockchain interactions\n- Minimal USDC ABI to reduce contract call overhead\n- Network detection from RPC URLs\n- Environment variable integration for configuration\n- Comprehensive logging and status reporting\n- Input validation for addresses and amounts\n- Balance validation before transactions\n\n## Security Features:\n- Private key validation\n- Address validation using ethers.isAddress()\n- Balance checks before transactions\n- Gas estimation to prevent failed transactions\n- Error categorization for better debugging\n\nThe module is ready for integration with the Express.js API endpoint.\n</info added on 2025-07-05T00:12:07.499Z>",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Connect to Blockchain Network",
+            "description": "Implement logic to establish a connection to the desired blockchain network(s) using a provider.",
+            "dependencies": [
+              1
+            ],
+            "details": "Utilize libraries such as ethers.js or web3.js to connect to Ethereum or other supported networks. Ensure the provider can be configured for different environments (e.g., mainnet, testnet).",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Load Signer from Environment",
+            "description": "Securely load the private key or signer credentials from environment variables for transaction signing.",
+            "dependencies": [
+              2
+            ],
+            "details": "Implement secure key management by reading sensitive information from environment variables and initializing the signer object for transaction authorization.",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Implement USDC Transfer Function",
+            "description": "Develop the core function to transfer USDC tokens from the sender to the recipient using the USDC contract.",
+            "dependencies": [
+              3
+            ],
+            "details": "Interact with the USDC token contract using its ABI and address. Ensure the function handles token decimals and invokes the transfer or transferFrom method as appropriate.",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Support Multiple Networks",
+            "description": "Add support for executing USDC transfers across multiple blockchain networks (e.g., Ethereum mainnet, testnets, Polygon).",
+            "dependencies": [
+              4
+            ],
+            "details": "Parameterize network selection and dynamically load the correct USDC contract address and provider based on the chosen network.",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Add Gas Estimation and Fee Optimization",
+            "description": "Integrate gas estimation and implement strategies to optimize transaction fees for USDC transfers.",
+            "dependencies": [
+              5
+            ],
+            "details": "Use provider methods to estimate gas usage and suggest optimal gas prices. Optionally, allow users to customize gas settings for cost efficiency.",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Handle Errors and Transaction Status",
+            "description": "Implement comprehensive error handling and provide real-time transaction status updates to users.",
+            "dependencies": [],
+            "details": "Catch and log errors at each step, handle failed transactions gracefully, and emit status updates (pending, confirmed, failed) for user feedback.",
+            "status": "done",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Build Express.js API Endpoint",
+        "description": "Implement the Express.js server with a POST /api/donate endpoint to trigger USDC donations.",
+        "details": "Set up Express.js server. Add POST /api/donate endpoint. Parse request body for amount. Call donateUSDC module. Return status and transaction hash. Configure CORS for frontend integration. Add basic request validation and rate limiting using express-rate-limit@7.1.0.",
+        "testStrategy": "Integration test API endpoint with mocked and real USDC transfers. Test request validation, rate limiting, and CORS.",
+        "priority": "high",
+        "dependencies": [
+          1,
+          2
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Set Up the Express Server",
+            "description": "Initialize a new Node.js project, install Express, and create a basic server that listens on a specified port.",
+            "dependencies": [],
+            "details": "Run `npm init -y` and `npm install express`. Create an entry file (e.g., app.js) and set up the Express server to listen on a port. Ensure the server can respond to basic requests.",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Configure CORS",
+            "description": "Enable and configure Cross-Origin Resource Sharing (CORS) to allow requests from permitted origins.",
+            "dependencies": [
+              1
+            ],
+            "details": "Install the `cors` package and use it as Express middleware. Set up CORS options as needed for your API.",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Implement Rate Limiting",
+            "description": "Add rate limiting middleware to protect the API from excessive requests and abuse.",
+            "dependencies": [
+              1
+            ],
+            "details": "Install a rate limiting package (such as `express-rate-limit`) and configure it to limit the number of requests per IP within a given timeframe.",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Add Request Validation",
+            "description": "Implement validation for incoming requests to the /api/donate endpoint to ensure data integrity and security.",
+            "dependencies": [
+              1
+            ],
+            "details": "Use a validation library (e.g., `joi` or `express-validator`) to define and enforce the expected schema for donation requests.",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Integrate donateUSDC Module",
+            "description": "Integrate the core donateUSDC module to handle the donation logic within the endpoint.",
+            "dependencies": [
+              1
+            ],
+            "details": "Import and connect the donateUSDC module, ensuring it can be called with validated request data.",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Implement the /api/donate Endpoint",
+            "description": "Create the /api/donate POST endpoint, applying validation, rate limiting, and invoking the donateUSDC module.",
+            "dependencies": [
+              2,
+              3,
+              4,
+              5
+            ],
+            "details": "Define the endpoint route, apply middleware for CORS, rate limiting, and validation, then process the request using the donateUSDC module and return an appropriate response.",
+            "status": "done",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Implement Security and Input Validation",
+        "description": "Add robust input validation, sanitization, and security measures to the API and core module.",
+        "details": "Validate and sanitize all API inputs. Secure private key management in .env. Add rate limiting to prevent abuse. Implement network connectivity checks and transaction timeout handling. Ensure no sensitive data is exposed in logs or responses.",
+        "testStrategy": "Test input validation with invalid/malicious payloads. Verify rate limiting and error responses. Check for sensitive data exposure.",
+        "priority": "medium",
+        "dependencies": [
+          1,
+          2,
+          3
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implement Input Validation",
+            "description": "Ensure all incoming data is strictly validated against expected formats, types, and ranges to prevent malformed or malicious input from reaching the application logic.",
+            "dependencies": [],
+            "details": "Define validation rules for each input field, use allow-lists where possible, and reject any data that does not conform to the specified criteria. Apply validation at both client and server sides for defense in depth.",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "Apply Input Sanitization",
+            "description": "Sanitize all user-supplied input to remove or neutralize potentially harmful content, such as scripts or SQL injection payloads.",
+            "dependencies": [
+              1
+            ],
+            "details": "Use context-aware sanitization libraries to clean input before processing or storing it. Ensure that all data passed to databases, logs, or output is sanitized to prevent injection and XSS attacks.",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "Secure Environment Variables",
+            "description": "Protect sensitive configuration data by securing environment variables and ensuring they are not exposed or leaked.",
+            "dependencies": [],
+            "details": "Store environment variables in secure storage, restrict access permissions, and avoid logging or displaying them in error messages. Use secrets management tools where appropriate.",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Implement Rate Limiting",
+            "description": "Prevent abuse and denial-of-service attacks by restricting the number of requests a client can make within a specified time window.",
+            "dependencies": [],
+            "details": "Configure rate limiting policies at the API gateway or application level. Set thresholds based on expected usage patterns and monitor for anomalies. Provide appropriate error responses when limits are exceeded.",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "Add Network Connectivity Checks",
+            "description": "Verify network connectivity and the integrity of connections before processing requests to ensure reliable and secure communication.",
+            "dependencies": [],
+            "details": "Implement health checks for dependent services, validate SSL/TLS certificates, and monitor for network anomalies. Fail gracefully if connectivity issues are detected.",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "Ensure Sensitive Data Is Not Exposed",
+            "description": "Prevent exposure of sensitive data in logs, error messages, API responses, and URLs.",
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
+            "details": "Audit all data flows to identify sensitive fields, mask or redact sensitive information in logs and responses, and enforce encryption for data in transit and at rest. Regularly review code and configurations for accidental data leaks.",
+            "status": "done",
+            "testStrategy": ""
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Develop Error Handling and Status Reporting",
+        "description": "Enhance error handling and provide comprehensive status reporting for all failure scenarios.",
+        "details": "Implement detailed error responses for wallet balance, network, and transaction failures. Return clear status and error messages to the frontend. Log errors for debugging without exposing sensitive data.",
+        "testStrategy": "Test error scenarios: insufficient balance, invalid recipient, network errors. Verify error messages and logging.",
+        "priority": "medium",
+        "dependencies": [
+          2,
+          3,
+          4
+        ],
+        "status": "done",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "Create Documentation and Setup Guide",
+        "description": "Prepare comprehensive documentation and setup instructions for the project.",
+        "details": "Write README.md with installation, configuration, and usage instructions. Provide .env.example with all required variables. Document API endpoint, payload format, and expected responses. Include security best practices and deployment notes.",
+        "testStrategy": "Review documentation for completeness and clarity. Test setup process using the guide.",
+        "priority": "medium",
+        "dependencies": [
+          1,
+          2,
+          3
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 7,
+        "title": "Implement Unit and Integration Testing",
+        "description": "Develop and execute unit and integration tests for the donation module and API.",
+        "details": "Write unit tests for donateUSDC.js using Jest. Mock wallet and contract interactions. Write integration tests for the Express.js API. Test with both mainnet and testnet configurations. Include test cases for success, failure, and edge cases.",
+        "testStrategy": "Run unit and integration tests. Ensure coverage for all critical paths and error scenarios.",
+        "priority": "medium",
+        "dependencies": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 8,
+        "title": "Prepare for Deployment and Final Review",
+        "description": "Finalize the project for deployment and conduct a comprehensive review.",
+        "details": "Review code, tests, and documentation. Ensure all environment variables are securely managed. Prepare deployment scripts if needed. Verify CORS and security settings. Conduct a final test with real USDC transfers on testnet.",
+        "testStrategy": "Perform end-to-end testing with real transactions. Review security and deployment readiness.",
+        "priority": "medium",
+        "dependencies": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "status": "pending",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2025-07-05T00:04:46.749Z",
+      "updated": "2025-07-05T02:17:08.126Z",
+      "description": "Tasks for master context"
+    }
+  }
+}
