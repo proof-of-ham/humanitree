@@ -23,6 +23,11 @@ export default function TreePlanterApp() {
   const [isInWorldApp, setIsInWorldApp] = useState(false)
   const [showIDKitWidget, setShowIDKitWidget] = useState(false)
   const [showSuccessMessage, setShowSuccessMessage] = useState(false)
+  const [showDonationModal, setShowDonationModal] = useState(false)
+  const [donationAmount, setDonationAmount] = useState("")
+  const [isDonating, setIsDonating] = useState(false)
+  const [swapQuote, setSwapQuote] = useState<any>(null)
+  const [donationSuccess, setDonationSuccess] = useState(false)
 
   // Load user data from localStorage on mount
   useEffect(() => {
@@ -60,6 +65,19 @@ export default function TreePlanterApp() {
 
     checkWorldAppEnvironment()
   }, [])
+
+  // Get swap quote when donation amount changes
+  useEffect(() => {
+    if (donationAmount && parseFloat(donationAmount) > 0) {
+      const timeoutId = setTimeout(() => {
+        getSwapQuote(donationAmount)
+      }, 500) // Debounce for 500ms
+
+      return () => clearTimeout(timeoutId)
+    } else {
+      setSwapQuote(null)
+    }
+  }, [donationAmount])
 
   const saveUserData = (data: any) => {
     localStorage.setItem("treePlanter_userData", JSON.stringify(data))
@@ -178,9 +196,13 @@ export default function TreePlanterApp() {
   }
 
   const handlePlantTree = async () => {
-    if (!isVerified) return
+    if (!isVerified) {
+      alert("Please verify your humanity first")
+      return
+    }
 
     setIsPlanting(true)
+
     try {
       const result = await plantTree(userNullifier)
       if (result.success) {
@@ -188,15 +210,15 @@ export default function TreePlanterApp() {
         setTreesPlanted(newTreeCount)
         setLastPlantedTree(result.tree)
         setShowCelebration(true)
-
-        // Save updated data
+        
+        // Update localStorage
         const userData = {
           isVerified: true,
           nullifier: userNullifier,
           treesPlanted: newTreeCount,
         }
         saveUserData(userData)
-
+        
         // Hide celebration after 4 seconds
         setTimeout(() => setShowCelebration(false), 4000)
       }
@@ -204,6 +226,70 @@ export default function TreePlanterApp() {
       console.error("Failed to plant tree:", error)
     } finally {
       setIsPlanting(false)
+    }
+  }
+
+  // Donation functions
+  const getSwapQuote = async (amount: string) => {
+    try {
+      const response = await fetch(`/api/swap/quote?from=WLD&to=USDC&amount=${amount}`)
+      const data = await response.json()
+      setSwapQuote(data)
+      return data
+    } catch (error) {
+      console.error("Failed to get swap quote:", error)
+      throw error
+    }
+  }
+
+  const executeSwap = async (amount: string) => {
+    try {
+      const response = await fetch("/api/swap/execute", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          from: "WLD",
+          to: "USDC",
+          amount: amount,
+          recipient: "0x1234567890123456789012345678901234567890" // Rainforest Foundation address
+        })
+      })
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error("Failed to execute swap:", error)
+      throw error
+    }
+  }
+
+  const handleDonation = async () => {
+    if (!donationAmount || parseFloat(donationAmount) <= 0) {
+      alert("Please enter a valid donation amount")
+      return
+    }
+
+    setIsDonating(true)
+
+    try {
+      // Get swap quote
+      const quote = await getSwapQuote(donationAmount)
+      
+      // Execute swap and donation
+      const result = await executeSwap(donationAmount)
+      
+      if (result.success) {
+        setDonationSuccess(true)
+        setTimeout(() => {
+          setDonationSuccess(false)
+          setShowDonationModal(false)
+          setDonationAmount("")
+        }, 3000)
+      }
+    } catch (error) {
+      console.error("Donation failed:", error)
+      alert("Donation failed. Please try again.")
+    } finally {
+      setIsDonating(false)
     }
   }
 
@@ -249,6 +335,125 @@ export default function TreePlanterApp() {
             <p className="text-gray-600 mb-4">You can now plant trees and help fight climate change.</p>
             <Button 
               onClick={() => setShowSuccessMessage(false)}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              Continue
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Donation Modal */}
+      {showDonationModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 backdrop-blur-sm">
+          <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 mx-4 text-center max-w-md w-full border border-gray-700 shadow-2xl">
+            {/* Glow effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-2xl blur-xl"></div>
+            
+            <div className="relative z-10">
+              {/* Header */}
+              <div className="flex items-center justify-center mb-6">
+                <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center mr-3">
+                  <TreePine className="w-6 h-6 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-white">Donate to Rainforest Foundation</h3>
+              </div>
+
+              {/* Donation Form */}
+              <div className="space-y-4 mb-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2 text-left">
+                    WLD Amount
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      value={donationAmount}
+                      onChange={(e) => setDonationAmount(e.target.value)}
+                      placeholder="0.0"
+                      className="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    />
+                    <div className="absolute right-3 top-3 text-gray-400 text-sm">WLD</div>
+                  </div>
+                </div>
+
+                {/* Swap Quote Display */}
+                {swapQuote && (
+                  <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-gray-300">You'll receive:</span>
+                      <span className="text-green-400 font-medium">
+                        {swapQuote.usdcAmount} USDC
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm mt-1">
+                      <span className="text-gray-300">Exchange rate:</span>
+                      <span className="text-blue-400">
+                        1 WLD = {swapQuote.rate} USDC
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Rainforest Foundation Info */}
+                <div className="bg-gradient-to-r from-green-900/50 to-emerald-900/50 rounded-lg p-4 border border-green-700/50">
+                  <div className="flex items-center mb-2">
+                    <div className="w-4 h-4 bg-green-500 rounded-full mr-2"></div>
+                    <span className="text-green-400 font-medium text-sm">Rainforest Foundation US</span>
+                  </div>
+                  <p className="text-gray-300 text-xs">
+                    Your donation will be used to protect rainforests and support Indigenous communities.
+                  </p>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex space-x-3">
+                <Button
+                  onClick={() => setShowDonationModal(false)}
+                  className="flex-1 bg-gray-700 hover:bg-gray-600 text-white border-0"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleDonation}
+                  disabled={isDonating || !donationAmount}
+                  className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white border-0 shadow-lg"
+                >
+                  {isDonating ? (
+                    <div className="flex items-center">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                      Processing...
+                    </div>
+                  ) : (
+                    "Donate Now"
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Donation Success Modal */}
+      {donationSuccess && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 backdrop-blur-sm">
+          <div className="bg-gradient-to-br from-green-900 to-emerald-800 rounded-2xl p-6 mx-4 text-center max-w-sm border border-green-700 shadow-2xl">
+            <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="w-8 h-8 text-white" />
+            </div>
+            <h3 className="text-lg font-semibold text-white mb-2">Donation Successful!</h3>
+            <p className="text-green-200 mb-4">
+              Your WLD has been converted to USDC and sent to Rainforest Foundation. 
+              A tree will be planted in your name! 🌱
+            </p>
+            <div className="bg-green-800/50 rounded-lg p-3 mb-4">
+              <p className="text-green-300 text-sm">
+                Thank you for supporting rainforest protection and Indigenous communities.
+              </p>
+            </div>
+            <Button 
+              onClick={() => setDonationSuccess(false)}
               className="bg-green-600 hover:bg-green-700 text-white"
             >
               Continue
@@ -352,6 +557,24 @@ export default function TreePlanterApp() {
                     )}
                   </IDKitWidget>
                 )}
+                
+                {/* Donation Button */}
+                <div className="mt-4">
+                  <Button 
+                    onClick={() => setShowDonationModal(true)}
+                    className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white py-3 text-base font-medium shadow-lg hover:shadow-xl transition-all duration-300 border-0"
+                    size="lg"
+                  >
+                    <div className="flex items-center justify-center">
+                      <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
+                      <span>Donate WLD</span>
+                      <div className="w-2 h-2 bg-green-400 rounded-full ml-2 animate-pulse"></div>
+                    </div>
+                  </Button>
+                  <p className="text-xs text-gray-500 text-center mt-2">
+                    Convert WLD to USDC and donate to Rainforest Foundation
+                  </p>
+                </div>
               </CardContent>
             </Card>
 
